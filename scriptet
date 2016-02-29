@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+#S1=$(cat units | sed -n '1p')
+#echo "Session manager"
+#echo "1) Unit"
+
+#MAXunits=$( cat units | wc -l)
+
+
+function load () {
+	while read p; do
+	screen -d -m -S $p
+	done <units
+}
+
+function unload () {
+	while read p; do
+	screen -X -S $(echo $p | awk '{print $1;}')  kill
+	#echo $p | awk '{print $1;}'
+	done <units
+}
+
+function open_session () {
+	echo "Ctrl+A D to exit"
+	if [ "$( screen -list | grep '$1')" ]; then
+		screen -r $1
+	else
+		echo "session does not exist"
+	fi
+}
+
+if [[ $1 == '--load' || $1 == '-l' ]]; then
+	load
+elif [[ $1 == '--unload' || $1 == '-u' ]]; then
+	unload
+elif [[ $1 == '--reload' || $1 == '-r' ]]; then
+	unload
+	load
+elif [ "$#" -ne 1 ]; then
+	echo Only one argument
+elif [[ $1 == '-p' || $1 == '--print' ]]; then
+	screen -list
+else
+	open_session $1
+fi
