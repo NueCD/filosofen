@@ -1,5 +1,6 @@
 #!/bin/bash
 
+UNITS=$HOME/.units
 
 #S1=$(cat units | sed -n '1p')
 #echo "Session manager"
@@ -7,38 +8,59 @@
 
 #MAXunits=$( cat units | wc -l)
 
-
-function load () {
+function load {
 	while read p; do
-	screen -d -m -S $p
-	done <units
+        if [[ ! -z "$( screen -list | grep $( echo '$p' | awk '{print $1;}' ) )" ]]; then
+            screen -d -m -S $p
+        fi
+	done <$UNITS
 }
 
-function unload () {
+function unload {
 	while read p; do
 	screen -X -S $(echo $p | awk '{print $1;}')  kill
 	#echo $p | awk '{print $1;}'
-	done <units
+	done <$UNITS
 }
 
 function open_session () {
-	echo "Ctrl+A D to exit"
-	if [ "$( screen -list | grep '$1')" ]; then
+	if [[ -z "$( screen -list | grep '$1')" ]]; then
+		echo "Ctrl+A D to exit"
 		screen -r $1
 	else
 		echo "session does not exist"
+		echo $1
 	fi
 }
 
 if [[ $1 == '--load' || $1 == '-l' ]]; then
 	load
+
+elif [[ $1 == '--init' || $1 == '-i' ]]; then
+   if [ ! -e $UNTIS ]; then
+    	echo Creating $UNITS file
+    	echo "# example: switch1 /dev/ttyUSB3" > $UNITS
+        ls -d /dev/* | grep "ttyUSB" >> $UNITS
+   else
+       echo "Unit file already exists. Replace it? (y/N)"
+       read a
+       if [[ $a == 'y' || $a == 'Y' ]]; then
+           echo Creating $UNITS file
+           echo "# example: switch1 /dev/ttyUSB3" > $UNITS 
+           ls -d /dev/* | grep "ttyUSB" >> $UNITS
+       fi
+    fi 
+
 elif [[ $1 == '--unload' || $1 == '-u' ]]; then
 	unload
+
 elif [[ $1 == '--reload' || $1 == '-r' ]]; then
 	unload
 	load
+
 elif [ "$#" -ne 1 ]; then
 	echo Only one argument
+
 elif [[ $1 == '-p' || $1 == '--print' ]]; then
 	screen -list
 else
